@@ -6,15 +6,18 @@ pokemon_list=(bulbasaur ivysaur venusaur charmander charmeleon)
 # Create output directory
 mkdir -p pokemon_data
 ERROR_LOG="pokemon_data/errors_parallel.log"
-: > "$ERROR_LOG"  # Clear previous log
+: > "$ERROR_LOG"
 
-# Function to fetch data for one Pokémon
+# Array to store PIDs
+pids=()
+
+# Function to fetch data
 fetch_pokemon() {
     local name=$1
     echo "Fetching data for $name..."
-    
-    response=$(curl -s -f "https://pokeapi.co/api/v2/pokemon/$name" -o "pokemon_data/${name}.json")
 
+    curl -s -f "https://pokeapi.co/api/v2/pokemon/$name" -o "pokemon_data/${name}.json"
+    
     if [ $? -eq 0 ]; then
         echo "Saved data to pokemon_data/${name}.json ✅"
     else
@@ -22,12 +25,25 @@ fetch_pokemon() {
     fi
 }
 
-# Loop through Pokémon and fetch in parallel
+# Trap to handle script interruption (CTRL+C or failure)
+cleanup() {
+    echo "Cleaning up background processes..."
+    for pid in "${pids[@]}"; do
+        kill "$pid" 2>/dev/null
+    done
+    exit 1
+}
+trap cleanup SIGINT SIGTERM
+
+# Fetch each Pokémon in the background and store PID
 for name in "${pokemon_list[@]}"; do
     fetch_pokemon "$name" &
+    pids+=($!)
 done
 
 # Wait for all background jobs to finish
-wait
+for pid in "${pids[@]}"; do
+    wait "$pid"
+done
 
 echo "✅ All fetch operations complete."
