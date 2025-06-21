@@ -6,7 +6,7 @@ pokemon_list=(bulbasaur ivysaur venusaur charmander charmeleon)
 # Create output directory and error log
 mkdir -p pokemon_data
 ERROR_LOG="pokemon_data/errors.log"
-: > "$ERROR_LOG"  # Clear previous log
+: > "$ERROR_LOG" # Clear the error log at the start
 
 # Loop through each Pokémon
 for name in "${pokemon_list[@]}"; do
